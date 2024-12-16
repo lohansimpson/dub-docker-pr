@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # App Configuration
+      - NEXT_PUBLIC_APP_DOMAIN=${NEXT_PUBLIC_APP_DOMAIN}
+      - NEXT_PUBLIC_APP_SHORT_DOMAIN=${NEXT_PUBLIC_APP_SHORT_DOMAIN}
+      - NODE_ENV=production
+      - NEXTAUTH_URL=https://${NEXT_PUBLIC_APP_DOMAIN}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      
+      # Database Configuration
+      - DATABASE_URL=${DATABASE_URL}
+      
+      # Redis Configuration (Upstash)
+      - UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL}
+      - UPSTASH_REDIS_REST_TOKEN=${UPSTASH_REDIS_REST_TOKEN}
+      - QSTASH_TOKEN=${QSTASH_TOKEN}
+      - QSTASH_CURRENT_SIGNING_KEY=${QSTASH_CURRENT_SIGNING_KEY}
+      - QSTASH_NEXT_SIGNING_KEY=${QSTASH_NEXT_SIGNING_KEY}
+      
+      # Analytics Configuration (Tinybird)
+      - TINYBIRD_API_KEY=${TINYBIRD_API_KEY}
+      - TINYBIRD_API_URL=${TINYBIRD_API_URL}
+      
+      # Storage Configuration (Cloudflare R2)
+      - STORAGE_ACCESS_KEY_ID=${STORAGE_ACCESS_KEY_ID}
+      - STORAGE_SECRET_ACCESS_KEY=${STORAGE_SECRET_ACCESS_KEY}
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
+      - STORAGE_BASE_URL=${STORAGE_BASE_URL}
+      
+      # Authentication (GitHub)
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      
+      # Email (Resend)
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      
+      # Optional Services
+      - UNSPLASH_ACCESS_KEY=${UNSPLASH_ACCESS_KEY}
+      
+    depends_on:
+      - mysql
+      - redis
+      - clickhouse
+
+  mysql:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-mysecretpassword}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-dub}
+      - MYSQL_USER=${MYSQL_USER:-dub}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-dubpassword}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    environment:
+      - CLICKHOUSE_DB=dub
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-clickhousepassword}
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+
+volumes:
+  mysql_data:
+  redis_data:
+  clickhouse_data:
